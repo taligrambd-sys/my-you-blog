@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNteach - আপনার শেখার মাধ্যম</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* Pornhub Style Logo / Header */
+        header { background-color: #000; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff9900; }
+        .logo { font-weight: bold; font-size: 24px; color: #fff; text-decoration: none; display: flex; align-items: center; }
+        .logo span { background-color: #ff9900; color: #000; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: 900; }
+        
+        /* Social Links */
+        .social-links a { color: #fff; text-decoration: none; margin-left: 15px; font-weight: bold; font-size: 14px; transition: color 0.3s; }
+        .social-links a.yt { color: #ff0000; }
+        .social-links a.tg { color: #0088cc; }
+        .social-links a:hover { opacity: 0.8; }
+
+        /* Search Section */
+        .search-container { background: #262626; padding: 20px 15px; text-align: center; border-bottom: 1px solid #333; }
+        .search-box { max-width: 500px; width: 100%; padding: 12px 20px; background: #111; border: 1px solid #444; color: #fff; border-radius: 25px; font-size: 16px; transition: border-color 0.3s; }
+        .search-box:focus { border-color: #ff9900; outline: none; }
+
+        /* Main Content */
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 15px; flex: 1; width: 100%; }
+        h2 { border-left: 4px solid #ff9900; padding-left: 10px; margin-bottom: 20px; font-size: 22px; }
+        
+        /* Grid Layout for Posts and Ads */
+        .blog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        
+        /* Blog Card Style */
+        .blog-card { background-color: #262626; border-radius: 8px; overflow: hidden; border: 1px solid #333; transition: transform 0.2s; display: flex; flex-direction: column; }
+        .blog-card:hover { transform: translateY(-5px); border-color: #ff9900; }
+        .blog-thumb { width: 100%; height: 180px; object-fit: cover; background-color: #333; }
+        .blog-info { padding: 15px; flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .blog-title { font-size: 18px; margin-bottom: 15px; color: #fff; line-height: 1.4; }
+        .read-btn { display: inline-block; background-color: #ff9900; color: #000; padding: 8px 15px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 14px; text-align: center; }
+
+        /* Ad Section Style */
+        .ad-card { grid-column: 1 / -1; background: #222; border: 2px dashed #444; border-radius: 8px; padding: 20px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 120px; color: #888; }
+        .ad-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #ff9900; margin-bottom: 5px; font-weight: bold; }
+
+        /* Footer Style */
+        footer { background: #000; padding: 20px; text-align: center; border-top: 1px solid #333; margin-top: auto; color: #aaa; font-size: 14px; }
+        footer p { margin-bottom: 10px; }
+        footer .footer-links a { color: #ff9900; text-decoration: none; margin: 0 10px; }
+        footer .footer-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">BN<span>teach</span></a>
+        <div class="social-links">
+            <a href="https://YouTube.com/BNteach20" target="_blank" class="yt">YouTube</a>
+            <a href="https://t.me/BNteach" target="_blank" class="tg">Telegram</a>
+            <a href="admin.html" style="color: #bbb;">Admin</a>
+        </div>
+    </header>
+
+    <div class="search-container">
+        <input type="text" id="searchBox" class="search-box" placeholder="ব্লগ পোস্ট খুঁজুন...">
+    </div>
+
+    <div class="container">
+        <h2 id="sectionTitle">সর্বশেষ ব্লগ পোস্টসমূহ</h2>
+        <div class="blog-grid" id="blogContainer">
+            <p style="color: #888;">লোড হচ্ছে...</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 BNteach. All Rights Reserved.</p>
+        <div class="footer-links">
+            <a href="https://YouTube.com/BNteach20" target="_blank">ইউটিউব</a> | 
+            <a href="https://t.me/BNteach" target="_blank">টেলিগ্রাম</a> | 
+            <a href="admin.html">এডমিন প্যানেল</a>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMFRYcecUSzi25cQfeRDgn7fhXz7QARWA",
+            authDomain: "my-you-blog.firebaseapp.com",
+            projectId: "my-you-blog",
+            storageBucket: "my-you-blog.firebasestorage.app",
+            messagingSenderId: "447217106827",
+            appId: "1:447217106827:web:3571675938e84de8a5798e",
+            measurementId: "G-SS1V1FCG2Z"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let allPosts = []; // সব পোস্ট জমা রাখার জন্য গ্লোবাল ভেরিয়েবল
+
+        const postsRef = ref(db, 'posts');
+        onValue(postsRef, (snapshot) => {
+            const data = snapshot.val();
+            if(!data) {
+                document.getElementById("blogContainer").innerHTML = "<p style='color: #888;'>কোনো পোস্ট পাওয়া যায়নি।</p>";
+                return;
+            }
+
+            // অবজেক্ট ডেটাকে অ্যারেতে রূপান্তর করে রিভার্স করা (নতুন পোস্ট আগে আসবে)
+            const keys = Object.keys(data).reverse();
+            allPosts = keys.map(key => ({ id: key, ...data[key] }));
+            
+            // প্রথমবার সব পোস্ট রেন্ডার করা
+            renderPosts(allPosts);
+        });
+
+        // পোস্ট রেন্ডার করার মেইন ফাংশন (৩টি পর পর অ্যাডসহ)
+        function renderPosts(postsToRender) {
+            const container = document.getElementById("blogContainer");
+            container.innerHTML = "";
+
+            if(postsToRender.length === 0) {
+                container.innerHTML = "<p style='color: #888;'>অনুসন্ধানের সাথে মেলে এমন কোনো পোস্ট পাওয়া যায়নি।</p>";
+                return;
+            }
+
+            let postCount = 0;
+
+            postsToRender.forEach((post) => {
+                // ১টি পোস্ট কার্ড তৈরি
+                const card = `
+                    <div class="blog-card">
+                        <img src="${post.thumbnail}" class="blog-thumb" alt="${post.title}">
+                        <div class="blog-info">
+                            <h3 class="blog-title">${post.title}</h3>
+                            <a href="view.html?id=${post.id}" class="read-btn">পড়ুন</a>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+                postCount++;
+
+                // প্রতি ৩টি পোস্টের পর একটি বিজ্ঞাপনের ফুল-উইডথ সারি (Ad Section) যোগ করা
+                if (postCount % 3 === 0) {
+                    const adCard = `
+                        <div class="ad-card">
+                            <div class="ad-label">Advertisement</div>
+                            <p>এখানে আপনার বিজ্ঞাপন কোড বসবে</p>
+                        </div>
+                    `;
+                    container.innerHTML += adCard;
+                }
+            });
+        }
+
+        // লাইভ সার্চ ফাংশনালিটি
+        document.getElementById('searchBox').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            
+            // শিরোনামের সাথে সার্চ টার্ম মিলিয়ে ফিল্টার করা
+            const filteredPosts = allPosts.filter(post => {
+                return post.title.toLowerCase().includes(searchTerm);
+            });
+
+            // টাইটেল আপডেট করা
+            const sectionTitle = document.getElementById('sectionTitle');
+            if(searchTerm !== "") {
+                sectionTitle.innerText = `সার্চ রেজাল্ট: "${e.target.value}"`;
+            } else {
+                sectionTitle.innerText = "সর্বশেষ ব্লগ পোস্টসমূহ";
+            }
+
+            // ফিল্টার করা পোস্টগুলো পুনরায় রেন্ডার করা
+            renderPosts(filteredPosts);
+        });
+    </script>
+</body>
+</html>
