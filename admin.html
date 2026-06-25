@@ -7,7 +7,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: sans-serif; background-color: #1a1a1a; color: #fff; padding: 20px; }
-        .admin-box { max-width: 600px; margin: 40px auto; background: #262626; padding: 30px; border-radius: 8px; border: 1px solid #333; }
+        .admin-box { max-width: 700px; margin: 40px auto; background: #262626; padding: 30px; border-radius: 8px; border: 1px solid #333; }
         .logo-preview { font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 25px; }
         .logo-preview span { background-color: #ff9900; color: #000; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: 900; }
         h2 { text-align: center; margin-bottom: 20px; color: #ff9900; font-size: 20px; }
@@ -19,6 +19,18 @@
         button:hover { background: #e68a00; }
         .msg { text-align: center; margin-top: 15px; font-weight: bold; }
         .hidden { display: none; }
+        
+        /* Manage Posts Styles */
+        .manage-section { margin-top: 40px; border-top: 1px solid #444; padding-top: 20px; }
+        .manage-title { color: #ff9900; font-size: 18px; margin-bottom: 15px; border-left: 3px solid #ff9900; padding-left: 8px; }
+        .post-list-item { background: #111; padding: 12px; border-radius: 4px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        .post-list-title { font-size: 14px; color: #eee; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 70%; }
+        .action-btns { display: flex; gap: 8px; }
+        .action-btn { padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .edit-btn { background: #0088cc; color: #fff; }
+        .edit-btn:hover { background: #006699; }
+        .delete-btn { background: #ff3333; color: #fff; }
+        .delete-btn:hover { background: #cc0000; }
     </style>
 </head>
 <body>
@@ -29,7 +41,7 @@
         <div id="loginSection">
             <h2>এডমিন লগইন</h2>
             <form id="loginForm">
-                <label>ইমেইল এড্রেস:</label>
+                <label>イমেইল এড্রেস:</label>
                 <input type="email" id="loginEmail" placeholder="আপনার এডমিন ইমেইল..." required>
                 <label>পাসওয়ার্ড:</label>
                 <input type="password" id="loginPassword" placeholder="আপনার পাসওয়ার্ড..." required>
@@ -38,9 +50,11 @@
         </div>
 
         <div id="postSection" class="hidden">
-            <h2>নতুন ব্লগ পোস্ট তৈরি করুন</h2>
+            <h2 id="formTitle">নতুন ব্লগ পোস্ট তৈরি করুন</h2>
             <form id="postForm">
-                <label>ব্লগ পোস্টের শিরোনাম (Title):</label>
+                <input type="hidden" id="editPostId" value="">
+                
+                <label>블গ পোস্টের শিরোনাম (Title):</label>
                 <input type="text" id="title" placeholder="এখানে শিরোনাম লিখুন..." required>
                 
                 <label>থাম্বনেইল ইমেজ লিঙ্ক (Thumbnail URL):</label>
@@ -51,6 +65,13 @@
                 
                 <button type="submit" id="submitBtn">পাবলিশ করুন</button>
             </form>
+
+            <div class="manage-section">
+                <div class="manage-title">পোস্টসমূহ ম্যানেজ করুন</div>
+                <div id="postListContainer">
+                    <p style="color: #888; font-size: 14px;">লোড হচ্ছে...</p>
+                </div>
+            </div>
         </div>
         
         <div class="msg" id="msgBox"></div>
@@ -59,9 +80,8 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
-        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue, remove } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-        // ফায়ারবেস কনফিগারেশন (databaseURL সহ)
         const firebaseConfig = {
             apiKey: "AIzaSyCMFRYcecUSzi25cQfeRDgn7fhXz7QARWA",
             authDomain: "my-you-blog.firebaseapp.com",
@@ -73,7 +93,6 @@
             databaseURL: "https://my-you-blog-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
@@ -81,16 +100,18 @@
         const loginSection = document.getElementById('loginSection');
         const postSection = document.getElementById('postSection');
         const msgBox = document.getElementById('msgBox');
+        const postListContainer = document.getElementById('postListContainer');
 
-        // লগইন অবস্থা ট্র্যাক করা
+        let allPostsData = {}; // এডিটের সময় ডেটা ক্যাচ করার জন্য গ্লোবাল অবজেক্ট
+
+        // লগইন অবস্থা ট্র্যাক করা এবং লিস্ট লোড করা
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // ইউজার লগইন থাকলে পোস্ট ফর্ম দেখাবে, লগইন ফর্ম লুকাবে
                 loginSection.classList.add('hidden');
                 postSection.classList.remove('hidden');
                 msgBox.innerText = "";
+                loadAdminPostList(); // লিস্ট লোড করার ফাংশন কল
             } else {
-                // লগইন না থাকলে লগইন ফর্ম দেখাবে
                 loginSection.classList.remove('hidden');
                 postSection.classList.add('hidden');
             }
@@ -120,50 +141,146 @@
                 });
         });
 
-        // নতুন পোস্ট পাবলিশ হ্যান্ডলার
+        // ডাটাবেজ থেকে সব পোস্ট এনে লিস্ট তৈরি করা
+        function loadAdminPostList() {
+            const postsRef = ref(db, 'posts');
+            onValue(postsRef, (snapshot) => {
+                postListContainer.innerHTML = "";
+                const data = snapshot.val();
+                if(!data) {
+                    postListContainer.innerHTML = "<p style='color: #888; font-size: 14px;'>কোনো পোস্ট পাওয়া যায়নি।</p>";
+                    return;
+                }
+                allPostsData = data; // গ্লোবাল ভেরিয়েবলে ডেটা স্টোর রাখা
+                
+                const keys = Object.keys(data).reverse(); // নতুন পোস্ট উপরে দেখাবে
+                keys.forEach(key => {
+                    const post = data[key];
+                    const item = document.createElement('div');
+                    item.className = 'post-list-item';
+                    item.innerHTML = `
+                        <div class="post-list-title">${post.title}</div>
+                        <div class="action-btns">
+                            <button class="action-btn edit-btn" data-id="${key}">এডিট</button>
+                            <button class="action-btn delete-btn" data-id="${key}">ডিলিট</button>
+                        </div>
+                    `;
+                    postListContainer.appendChild(item);
+                });
+
+                // এডিট বোতামের ইভেন্ট লিসেনার
+                document.querySelectorAll('.edit-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        setupEditForm(id);
+                    });
+                });
+
+                // ডিলিট বোতামের ইভেন্ট লিসেনার
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.getAttribute('data-id');
+                        if(confirm("আপনি কি নিশ্চিতভাবে এই পোস্টটি ডিলিট করতে চান?")) {
+                            deletePost(id);
+                        }
+                    });
+                });
+            });
+        }
+
+        // এডিটের জন্য ফর্ম রেডি করা
+        function setupEditForm(id) {
+            const post = allPostsData[id];
+            if(post) {
+                document.getElementById('editPostId').value = id;
+                document.getElementById('title').value = post.title;
+                document.getElementById('thumbnail').value = post.thumbnail;
+                document.getElementById('htmlContent').value = post.content;
+                
+                document.getElementById('formTitle').innerText = "পোস্ট পরিবর্তন/এডিট করুন";
+                document.getElementById('submitBtn').innerText = "আপডেট করুন";
+                window.scrollTo({ top: 0, behavior: 'smooth' }); // স্ক্রোল করে ফর্মে নিয়ে যাওয়া
+            }
+        }
+
+        // পোস্ট ডিলিট করার ফাংশন
+        function deletePost(id) {
+            const postRef = ref(db, `posts/${id}`);
+            remove(postRef)
+                .then(() => {
+                    msgBox.style.color = "#00ff00";
+                    msgBox.innerText = "পোস্টটি সফলভাবে ডিলিট করা হয়েছে!";
+                })
+                .catch((error) => {
+                    msgBox.style.color = "#ff0000";
+                    msgBox.innerText = "ডিলিট করতে সমস্যা হয়েছে: " + error.message;
+                });
+        }
+
+        // পোস্ট পাবলিশ এবং আপডেট হ্যান্ডলার
         document.getElementById('postForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const btn = document.getElementById('submitBtn');
+            const editId = document.getElementById('editPostId').value;
             const title = document.getElementById('title').value;
             const thumbnail = document.getElementById('thumbnail').value;
             const htmlContent = document.getElementById('htmlContent').value;
             
-            // পোস্ট করার মুহূর্তে সেশন চেক
             const currentUser = auth.currentUser;
             if (!currentUser) {
                 msgBox.style.color = "#ff0000";
-                msgBox.innerText = "সেশন শেষ হয়ে গেছে! দয়া করে পেজটি রিফ্রেশ করে আবার লগইন করুন।";
+                msgBox.innerText = "সেশন শেষ হয়ে গেছে! আবার লগইন করুন।";
                 return;
             }
 
             btn.disabled = true;
-            btn.innerText = "আপলোড হচ্ছে...";
+            btn.innerText = editId ? "আপডেট হচ্ছে..." : "আপলোড হচ্ছে...";
             msgBox.innerText = "";
             
-            // রিয়েলটাইম ডাটাবেজের 'posts' কালেকশনে রেফারেন্স নেওয়া
-            const postsRef = ref(db, 'posts');
-            const newPostRef = push(postsRef);
+            let targetPostRef;
+            if (editId) {
+                // এডিট মোড হলে আগের নির্দিষ্ট আইডিতেই ডেটা ওভাররাইট হবে
+                targetPostRef = ref(db, `posts/${editId}`);
+            } else {
+                // নতুন পোস্ট হলে নতুন আইডি তৈরি হবে
+                const postsRef = ref(db, 'posts');
+                targetPostRef = push(postsRef);
+            }
             
-            set(newPostRef, {
+            const postData = {
                 title: title,
                 thumbnail: thumbnail,
                 content: htmlContent,
-                createdAt: Date.now()
-            })
+                updatedAt: Date.now()
+            };
+            
+            if(!editId) {
+                postData.createdAt = Date.now();
+            } else {
+                // পুরোনো ক্রিয়েশন টাইম ধরে রাখা (ঐচ্ছিক)
+                if(allPostsData[editId] && allPostsData[editId].createdAt){
+                    postData.createdAt = allPostsData[editId].createdAt;
+                }
+            }
+            
+            set(targetPostRef, postData)
             .then(() => {
                 msgBox.style.color = "#00ff00";
-                msgBox.innerText = "পোস্টটি সফলভাবে পাবলিশ হয়েছে!";
+                msgBox.innerText = editId ? "পোস্টটি সফলভাবে আপডেট হয়েছে!" : "পোস্টটি সফলভাবে পাবলিশ হয়েছে!";
+                
+                // ফর্ম রিসেট এবং আগের অবস্থায় ফেরত নেওয়া
                 document.getElementById('postForm').reset();
+                document.getElementById('editPostId').value = "";
+                document.getElementById('formTitle').innerText = "নতুন ব্লগ পোস্ট তৈরি করুন";
+                document.getElementById('submitBtn').innerText = "পাবলিশ করুন";
             })
             .catch((error) => {
                 msgBox.style.color = "#ff0000";
                 msgBox.innerText = "ভুল হয়েছে: " + error.message;
-                console.error(error);
             })
             .finally(() => {
                 btn.disabled = false;
-                btn.innerText = "পাবলিশ করুন";
             });
         });
     </script>
