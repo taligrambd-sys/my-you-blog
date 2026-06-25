@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNteach - Admin Panel</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: sans-serif; background-color: #1a1a1a; color: #fff; padding: 20px; }
+        .admin-box { max-width: 600px; margin: 40px auto; background: #262626; padding: 30px; border-radius: 8px; border: 1px solid #333; }
+        .logo-preview { font-weight: bold; font-size: 24px; text-align: center; margin-bottom: 25px; }
+        .logo-preview span { background-color: #ff9900; color: #000; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: 900; }
+        h2 { text-align: center; margin-bottom: 20px; color: #ff9900; font-size: 20px; }
+        label { display: block; margin-bottom: 8px; color: #bbb; font-size: 14px; }
+        input[type="email"], input[type="password"], input[type="text"], textarea { width: 100%; padding: 12px; margin-bottom: 20px; background: #111; border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 15px; }
+        input:focus, textarea:focus { border-color: #ff9900; outline: none; }
+        textarea { height: 200px; font-family: monospace; }
+        button { width: 100%; background: #ff9900; color: #000; border: none; padding: 14px; font-size: 16px; font-weight: bold; border-radius: 4px; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #e68a00; }
+        .msg { text-align: center; margin-top: 15px; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-box">
+        <div class="logo-preview">BN<span>teach</span> Admin</div>
+        
+        <div id="loginSection">
+            <h2>এডমিন লগইন</h2>
+            <form id="loginForm">
+                <label>ইমেইল এড্রেস:</label>
+                <input type="email" id="loginEmail" placeholder="আপনার এডমিন ইমেইল..." required>
+                <label>পাসওয়ার্ড:</label>
+                <input type="password" id="loginPassword" placeholder="আপনার পাসওয়ার্ড..." required>
+                <button type="submit" id="loginBtn">লগইন করুন</button>
+            </form>
+        </div>
+
+        <div id="postSection" class="hidden">
+            <h2>নতুন ব্লগ পোস্ট তৈরি করুন</h2>
+            <form id="postForm">
+                <label>ব্লগ পোস্টের শিরোনাম (Title):</label>
+                <input type="text" id="title" placeholder="এখানে শিরোনাম লিখুন..." required>
+                
+                <label>থাম্বনেইল ইমেজ লিঙ্ক (Thumbnail URL):</label>
+                <input type="text" id="thumbnail" placeholder="https://example.com/image.jpg" required>
+                
+                <label>পোস্টের HTML ফাইল কোড (Paste HTML Code):</label>
+                <textarea id="htmlContent" placeholder="আপনার আর্টিকেলের HTML কোড এখানে পেস্ট করুন..." required></textarea>
+                
+                <button type="submit" id="submitBtn">পাবলিশ করুন</button>
+            </form>
+        </div>
+        
+        <div class="msg" id="msgBox"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        // আপনার ফায়ারবেস কনফিগারেশন
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMFRYcecUSzi25cQfeRDgn7fhXz7QARWA",
+            authDomain: "my-you-blog.firebaseapp.com",
+            projectId: "my-you-blog",
+            storageBucket: "my-you-blog.firebasestorage.app",
+            messagingSenderId: "447217106827",
+            appId: "1:447217106827:web:3571675938e84de8a5798e",
+            measurementId: "G-SS1V1FCG2Z"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        const loginSection = document.getElementById('loginSection');
+        const postSection = document.getElementById('postSection');
+        const msgBox = document.getElementById('msgBox');
+
+        // লগইন অবস্থা চেক করা
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // ইউজার লগইন থাকলে পোস্ট সেকশন দেখাবে, লগইন সেকশন লুকাবে
+                loginSection.classList.add('hidden');
+                postSection.classList.remove('hidden');
+                msgBox.innerText = "";
+            } else {
+                // লগইন না থাকলে লগইন সেকশন দেখাবে
+                loginSection.classList.remove('hidden');
+                postSection.classList.add('hidden');
+            }
+        });
+
+        // লগইন হ্যান্ডলার
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
+
+            loginBtn.disabled = true;
+            loginBtn.innerText = "যাচাই করা হচ্ছে...";
+            msgBox.innerText = "";
+
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    msgBox.style.color = "#00ff00";
+                    msgBox.innerText = "লগইন সফল হয়েছে!";
+                })
+                .catch((error) => {
+                    msgBox.style.color = "#ff0000";
+                    msgBox.innerText = "ভুল ইমেইল বা পাসওয়ার্ড!";
+                    loginBtn.disabled = false;
+                    loginBtn.innerText = "লগইন করুন";
+                });
+        });
+
+        // পোস্ট পাবলিশ হ্যান্ডলার
+        document.getElementById('postForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const title = document.getElementById('title').value;
+            const thumbnail = document.getElementById('thumbnail').value;
+            const htmlContent = document.getElementById('htmlContent').value;
+            
+            btn.disabled = true;
+            btn.innerText = "আপলোড হচ্ছে...";
+            
+            const postsRef = ref(db, 'posts');
+            const newPostRef = push(postsRef);
+            
+            set(newPostRef, {
+                title: title,
+                thumbnail: thumbnail,
+                content: htmlContent,
+                createdAt: Date.now()
+            })
+            .then(() => {
+                msgBox.style.color = "#00ff00";
+                msgBox.innerText = "পোস্টটি সফলভাবে পাবলিশ হয়েছে!";
+                document.getElementById('postForm').reset();
+            })
+            .catch((error) => {
+                msgBox.style.color = "#ff0000";
+                msgBox.innerText = "ভুল হয়েছে: " + error.message;
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerText = "পাবলিশ করুন";
+            });
+        });
+    </script>
+</body>
+</html>
