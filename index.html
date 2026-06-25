@@ -57,7 +57,6 @@
         <div class="social-links">
             <a href="https://YouTube.com/BNteach20" target="_blank" class="yt">YouTube</a>
             <a href="https://t.me/BNteach" target="_blank" class="tg">Telegram</a>
-            <a href="admin.html" style="color: #bbb;">Admin</a>
         </div>
     </header>
 
@@ -71,6 +70,7 @@
             <p style="color: #888;">লোড হচ্ছে...</p>
         </div>
     </div>
+
     <footer>
         <p>&copy; 2026 BNteach. All Rights Reserved.</p>
         <div class="footer-links">
@@ -78,10 +78,12 @@
             <a href="https://t.me/BNteach" target="_blank">টেলিগ্রাম</a>
         </div>
     </footer>
-   <script type="module">
+
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
+        // ফায়ারবেস কনফিগারেশন (databaseURL সহ)
         const firebaseConfig = {
             apiKey: "AIzaSyCMFRYcecUSzi25cQfeRDgn7fhXz7QARWA",
             authDomain: "my-you-blog.firebaseapp.com",
@@ -89,13 +91,14 @@
             storageBucket: "my-you-blog.firebasestorage.app",
             messagingSenderId: "447217106827",
             appId: "1:447217106827:web:3571675938e84de8a5798e",
-            measurementId: "G-SS1V1FCG2Z"
+            measurementId: "G-SS1V1FCG2Z",
+            databaseURL: "https://my-you-blog-default-rtdb.asia-southeast1.firebasedatabase.app" //
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
 
-        let allPosts = []; // সব পোস্ট জমা রাখার জন্য গ্লোবাল ভেরিয়েবল
+        let allPosts = [];
 
         const postsRef = ref(db, 'posts');
         onValue(postsRef, (snapshot) => {
@@ -105,15 +108,13 @@
                 return;
             }
 
-            // অবজেক্ট ডেটাকে অ্যারেতে রূপান্তর করে রিভার্স করা (নতুন পোস্ট আগে আসবে)
             const keys = Object.keys(data).reverse();
             allPosts = keys.map(key => ({ id: key, ...data[key] }));
             
-            // প্রথমবার সব পোস্ট রেন্ডার করা
             renderPosts(allPosts);
         });
 
-        // পোস্ট রেন্ডার করার মেইন ফাংশন (৩টি পর পর অ্যাডসহ)
+        // পোস্ট রেন্ডার করার ফাংশন (৩টি পর পর অ্যাডসহ)
         function renderPosts(postsToRender) {
             const container = document.getElementById("blogContainer");
             container.innerHTML = "";
@@ -126,7 +127,6 @@
             let postCount = 0;
 
             postsToRender.forEach((post) => {
-                // ১টি পোস্ট কার্ড তৈরি
                 const card = `
                     <div class="blog-card">
                         <img src="${post.thumbnail}" class="blog-thumb" alt="${post.title}">
@@ -139,12 +139,11 @@
                 container.innerHTML += card;
                 postCount++;
 
-                // প্রতি ৩টি পোস্টের পর একটি বিজ্ঞাপনের ফুল-উইডথ সারি (Ad Section) যোগ করা
                 if (postCount % 3 === 0) {
                     const adCard = `
                         <div class="ad-card">
                             <div class="ad-label">Advertisement</div>
-                            <p>এখানে আপনার বিজ্ঞাপন কোড বসবে</p>
+                            <p>এখানে আপনার विज्ञापन কোড বসবে</p>
                         </div>
                     `;
                     container.innerHTML += adCard;
@@ -152,16 +151,14 @@
             });
         }
 
-        // লাইভ সার্চ ফাংশনালিটি
+        // লাইভ সার্চ ফাংশন
         document.getElementById('searchBox').addEventListener('input', function(e) {
             const searchTerm = e.target.value.toLowerCase().trim();
             
-            // শিরোনামের সাথে সার্চ টার্ম মিলিয়ে ফিল্টার করা
             const filteredPosts = allPosts.filter(post => {
                 return post.title.toLowerCase().includes(searchTerm);
             });
 
-            // টাইটেল আপডেট করা
             const sectionTitle = document.getElementById('sectionTitle');
             if(searchTerm !== "") {
                 sectionTitle.innerText = `সার্চ রেজাল্ট: "${e.target.value}"`;
@@ -169,7 +166,6 @@
                 sectionTitle.innerText = "সর্বশেষ ব্লগ পোস্টসমূহ";
             }
 
-            // ফিল্টার করা পোস্টগুলো পুনরায় রেন্ডার করা
             renderPosts(filteredPosts);
         });
     </script>
