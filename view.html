@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BNteach - ব্লগ ভিউ</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #fff; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        /* Same Pornhub Style Header */
+        header { background-color: #000; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ff9900; }
+        .logo { font-weight: bold; font-size: 24px; color: #fff; text-decoration: none; display: flex; align-items: center; }
+        .logo span { background-color: #ff9900; color: #000; padding: 2px 6px; border-radius: 4px; margin-left: 4px; font-weight: 900; }
+        
+        .back-btn { color: #ff9900; text-decoration: none; font-weight: bold; font-size: 14px; transition: opacity 0.2s; }
+        .back-btn:hover { opacity: 0.8; }
+
+        /* Main Content Container */
+        .container { max-width: 800px; margin: 30px auto; padding: 25px; background-color: #262626; border-radius: 8px; border: 1px solid #333; flex: 1; width: 100%; }
+        
+        .post-title { font-size: 28px; margin-bottom: 20px; color: #ff9900; line-height: 1.4; border-bottom: 1px solid #444; padding-bottom: 15px; }
+        .post-content { color: #ddd; line-height: 1.7; font-size: 16px; }
+        
+        /* Responsive styles for pasted HTML inside content */
+        .post-content img { max-width: 100%; height: auto; border-radius: 6px; margin: 15px 0; display: block; }
+        .post-content a { color: #ff9900; text-decoration: none; }
+        .post-content a:hover { text-decoration: underline; }
+        .post-content code, .post-content pre { background: #111; padding: 5px 10px; border-radius: 4px; font-family: monospace; color: #ff9900; overflow-x: auto; }
+        .post-content pre { padding: 15px; margin: 15px 0; }
+
+        /* Same Footer Style */
+        footer { background: #000; padding: 20px; text-align: center; border-top: 1px solid #333; margin-top: auto; color: #aaa; font-size: 14px; }
+        footer p { margin-bottom: 10px; }
+        footer .footer-links a { color: #ff9900; text-decoration: none; margin: 0 10px; }
+        footer .footer-links a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html" class="logo">BN<span>teach</span></a>
+        <a href="index.html" class="back-btn">← হোমপেজে ফিরুন</a>
+    </header>
+
+    <div class="container">
+        <h1 class="post-title" id="postTitle">লোড হচ্ছে...</h1>
+        <div class="post-content" id="postContent">
+            </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2026 BNteach. All Rights Reserved.</p>
+        <div class="footer-links">
+            <a href="https://YouTube.com/BNteach20" target="_blank">ইউটিউব</a> | 
+            <a href="https://t.me/BNteach" target="_blank">টেলিগ্রাম</a> | 
+            <a href="admin.html">এডমিন প্যানেল</a>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCMFRYcecUSzi25cQfeRDgn7fhXz7QARWA",
+            authDomain: "my-you-blog.firebaseapp.com",
+            projectId: "my-you-blog",
+            storageBucket: "my-you-blog.firebasestorage.app",
+            messagingSenderId: "447217106827",
+            appId: "1:447217106827:web:3571675938e84de8a5798e",
+            measurementId: "G-SS1V1FCG2Z"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // URL থেকে পোস্ট আইডি (ID) ক্যাচ করা
+        const urlParams = new URLSearchParams(window.location.search);
+        const postId = urlParams.get('id');
+
+        if(postId) {
+            const postRef = ref(db, `posts/${postId}`);
+            get(postRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const post = snapshot.val();
+                    document.getElementById('postTitle').innerText = post.title;
+                    // innerHTML ব্যবহার করায় আপনার পেস্ট করা HTML কোড সরাসরি ব্রাউজারে রান করবে
+                    document.getElementById('postContent').innerHTML = post.content;
+                    
+                    // ব্রাউজার ট্যাবের টাইটেল পরিবর্তন করা
+                    document.title = `${post.title} - BNteach`;
+                } else {
+                    document.getElementById('postTitle').innerText = "পোস্টটি খুঁজে পাওয়া যায়নি!";
+                    document.getElementById('postContent').innerHTML = "";
+                }
+            }).catch((error) => {
+                console.error("Error getting data: ", error);
+                document.getElementById('postTitle').innerText = "ডেটা লোড করতে সমস্যা হয়েছে!";
+            });
+        } else {
+            document.getElementById('postTitle').innerText = "ভুল লিঙ্ক বা আইডি!";
+        }
+    </script>
+</body>
+</html>
