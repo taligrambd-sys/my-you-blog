@@ -61,7 +61,7 @@
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
         import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js";
 
-        // আপনার ফায়ারবেস কনফিগারেশন
+        // ফায়ারবেস কনফিগারেশন (databaseURL সহ)
         const firebaseConfig = {
             apiKey: "AIzaSyCMFRYcecUSzi25cQfeRDgn7fhXz7QARWA",
             authDomain: "my-you-blog.firebaseapp.com",
@@ -69,7 +69,8 @@
             storageBucket: "my-you-blog.firebasestorage.app",
             messagingSenderId: "447217106827",
             appId: "1:447217106827:web:3571675938e84de8a5798e",
-            measurementId: "G-SS1V1FCG2Z"
+            measurementId: "G-SS1V1FCG2Z",
+            databaseURL: "https://my-you-blog-default-rtdb.asia-southeast1.firebasedatabase.app"
         };
 
         // Initialize Firebase
@@ -81,21 +82,21 @@
         const postSection = document.getElementById('postSection');
         const msgBox = document.getElementById('msgBox');
 
-        // লগইন অবস্থা চেক করা
+        // লগইন অবস্থা ট্র্যাক করা
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // ইউজার লগইন থাকলে পোস্ট সেকশন দেখাবে, লগইন সেকশন লুকাবে
+                // ইউজার লগইন থাকলে পোস্ট ফর্ম দেখাবে, লগইন ফর্ম লুকাবে
                 loginSection.classList.add('hidden');
                 postSection.classList.remove('hidden');
                 msgBox.innerText = "";
             } else {
-                // লগইন না থাকলে লগইন সেকশন দেখাবে
+                // লগইন না থাকলে লগইন ফর্ম দেখাবে
                 loginSection.classList.remove('hidden');
                 postSection.classList.add('hidden');
             }
         });
 
-        // লগইন হ্যান্ডলার
+        // লগইন সাবমিট হ্যান্ডলার
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -107,7 +108,7 @@
             msgBox.innerText = "";
 
             signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
+                .then(() => {
                     msgBox.style.color = "#00ff00";
                     msgBox.innerText = "লগইন সফল হয়েছে!";
                 })
@@ -119,7 +120,7 @@
                 });
         });
 
-        // পোস্ট পাবলিশ হ্যান্ডলার
+        // নতুন পোস্ট পাবলিশ হ্যান্ডলার
         document.getElementById('postForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -128,9 +129,19 @@
             const thumbnail = document.getElementById('thumbnail').value;
             const htmlContent = document.getElementById('htmlContent').value;
             
+            // পোস্ট করার মুহূর্তে সেশন চেক
+            const currentUser = auth.currentUser;
+            if (!currentUser) {
+                msgBox.style.color = "#ff0000";
+                msgBox.innerText = "সেশন শেষ হয়ে গেছে! দয়া করে পেজটি রিফ্রেশ করে আবার লগইন করুন।";
+                return;
+            }
+
             btn.disabled = true;
             btn.innerText = "আপলোড হচ্ছে...";
+            msgBox.innerText = "";
             
+            // রিয়েলটাইম ডাটাবেজের 'posts' কালেকশনে রেফারেন্স নেওয়া
             const postsRef = ref(db, 'posts');
             const newPostRef = push(postsRef);
             
@@ -148,6 +159,7 @@
             .catch((error) => {
                 msgBox.style.color = "#ff0000";
                 msgBox.innerText = "ভুল হয়েছে: " + error.message;
+                console.error(error);
             })
             .finally(() => {
                 btn.disabled = false;
